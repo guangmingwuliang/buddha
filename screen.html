@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>祈福大屏</title>
+
+<style>
+body{
+  margin:0;
+  overflow:hidden;
+  background:black;
+  font-family:Arial;
+}
+
+/* 佛像背景（大屏优化） */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:url('bg.jpg') center center / cover no-repeat;
+  opacity:0.25;
+}
+
+/* 顶部标题 */
+.header{
+  position:fixed;
+  top:20px;
+  width:100%;
+  text-align:center;
+  color:gold;
+  font-size:48px;
+  text-shadow:0 0 20px gold;
+}
+
+/* 祝福文字 */
+.item{
+  position:absolute;
+  font-size:40px;
+  color:gold;
+  text-shadow:0 0 20px gold;
+  animation:fly 12s linear;
+}
+
+@keyframes fly{
+  from{transform:translateY(100vh);opacity:0}
+  20%{opacity:1}
+  to{transform:translateY(-120vh);opacity:0}
+}
+
+/* 粒子 */
+canvas{
+  position:fixed;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">浴佛节 · 祈福墙 🙏</div>
+
+<canvas id="c"></canvas>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBsDgoJBmX35VWNHH0g_fL-fFf-DeBqnfQ",
+  authDomain: "buddha-waii.firebaseapp.com",
+  databaseURL: "https://buddha-waii-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "buddha-waii"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* AI祝福 */
+function ai(msg){
+  if(msg.includes("健康")){
+    return ["祈愿身心安康，福慧增长 🙏","ขอให้สุขภาพแข็งแรง มีบุญมีปัญญา 🙏"];
+  }
+  if(msg.includes("平安")){
+    return ["祈愿平安吉祥，诸事顺遂 🙏","ขอให้ปลอดภัย ราบรื่นทุกประการ 🙏"];
+  }
+  return ["祈愿 "+msg+"，福慧双增 🙏","ขอให้ "+msg+" มีบุญมีปัญญา 🙏"];
+}
+
+/* 🔊 语音 */
+function speak(text, lang){
+  let msg = new SpeechSynthesisUtterance(text);
+  msg.lang = lang;
+  msg.rate = 0.9;
+  speechSynthesis.speak(msg);
+}
+
+/* 显示 */
+db.ref("blessings").limitToLast(50).on("child_added", snap=>{
+  let d=snap.val();
+  if(!d.approved) return;
+
+  let [cn,th]=ai(d.msg);
+
+  let div=document.createElement("div");
+  div.className="item";
+  div.innerHTML=`🙏 ${d.name}<br>${cn}<br>${th}`;
+  div.style.left=Math.random()*80+"%";
+
+  document.body.appendChild(div);
+
+  /* 语音播报 */
+  speak("善信 "+d.name+"，"+cn,"zh-CN");
+  setTimeout(()=>{speak(th,"th-TH")},3000);
+
+  setTimeout(()=>div.remove(),12000);
+});
+
+/* 粒子佛光 */
+const c=document.getElementById("c");
+const ctx=c.getContext("2d");
+c.width=window.innerWidth;
+c.height=window.innerHeight;
+
+let p=[];
+for(let i=0;i<80;i++){
+  p.push({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*2});
+}
+
+setInterval(()=>{
+  ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle="gold";
+  p.forEach(o=>{
+    ctx.beginPath();
+    ctx.arc(o.x,o.y,o.r,0,6.28);
+    ctx.fill();
+    o.y-=0.4;
+    if(o.y<0){o.y=c.height;o.x=Math.random()*c.width;}
+  });
+},30);
+</script>
+
+</body>
+</html>

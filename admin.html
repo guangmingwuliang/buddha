@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>管理后台</title>
+
+<style>
+body{background:#111;color:gold;font-family:Arial;padding:20px}
+input{padding:10px;font-size:16px}
+button{padding:8px 15px;margin:5px}
+</style>
+</head>
+
+<body>
+
+<h2>🔐 管理后台</h2>
+
+<div id="loginBox">
+  <input type="password" id="pwd" placeholder="请输入密码">
+  <button onclick="login()">进入</button>
+</div>
+
+<div id="panel" style="display:none;">
+  <h3 id="stats"></h3>
+  <div id="list"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase.js"></script>
+
+<script>
+const PASSWORD = "8888"; // 可以改
+
+function login(){
+  const pwd = document.getElementById("pwd").value;
+
+  if(pwd === PASSWORD){
+    document.getElementById("loginBox").style.display = "none";
+    document.getElementById("panel").style.display = "block";
+    load();
+  }else{
+    alert("密码错误");
+  }
+}
+
+/* Firebase配置 */
+const firebaseConfig = {
+  apiKey: "AIzaSyBsDgoJBmX35VWNHH0g_fL-fFf-DeBqnfQ",
+  authDomain: "buddha-waii.firebaseapp.com",
+  databaseURL: "https://buddha-waii-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "buddha-waii"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* 加载数据 */
+function load(){
+  const list = document.getElementById("list");
+  const stats = document.getElementById("stats");
+
+  db.ref("blessings").on("value", function(snap){
+    list.innerHTML = "";
+
+    let total = 0;
+
+    snap.forEach(function(s){
+      total++;
+      let d = s.val();
+
+      let div = document.createElement("div");
+      div.innerHTML = d.name + "：" + d.msg +
+        " <button onclick=\"del('" + s.key + "')\">删除</button>";
+
+      list.appendChild(div);
+    });
+
+    stats.innerHTML = "总数：" + total;
+  });
+}
+
+/* 删除 */
+function del(key){
+  db.ref("blessings/" + key).remove();
+}
+</script>
+
+</body>
+</html>
